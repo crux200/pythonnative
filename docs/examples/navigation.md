@@ -38,7 +38,7 @@ def ProfileScreen():
     route = pn.use_route()
     nav = pn.use_navigation()
     return pn.Column(
-        pn.Text(f"User #{route['params']['user_id']}", style={"font_size": 24}),
+        pn.Text(f"User #{route['user_id']}", style={"font_size": 24}),
         pn.Button("Back", on_press=nav.go_back),
         style={"spacing": 12, "padding": 16},
     )
@@ -56,7 +56,7 @@ def App():
 
 `nav.navigate("Profile", {...})` pushes onto the stack;
 `nav.go_back()` pops one frame. To replace the entire stack (e.g.,
-after login), use `nav.replace(...)`.
+after login), use `nav.reset(...)`.
 
 ## Tab navigator
 

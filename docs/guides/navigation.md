@@ -32,8 +32,8 @@ Stack = pn.create_stack_navigator()
 def App():
     return pn.NavigationContainer(
         Stack.Navigator(
-            Stack.Screen("Home", HomeScreen, options={"title": "Home"}),
-            Stack.Screen("Detail", DetailScreen, options={"title": "Detail"}),
+            Stack.Screen("Home", component=HomeScreen, options={"title": "Home"}),
+            Stack.Screen("Detail", component=DetailScreen, options={"title": "Detail"}),
             initial_route="Home",
         )
     )
@@ -60,8 +60,8 @@ Stack = pn.create_stack_navigator()
 def App():
     return pn.NavigationContainer(
         Stack.Navigator(
-            Stack.Screen("Home", HomeScreen, options={"title": "Home"}),
-            Stack.Screen("Detail", DetailScreen, options={"title": "Detail"}),
+            Stack.Screen("Home", component=HomeScreen, options={"title": "Home"}),
+            Stack.Screen("Detail", component=DetailScreen, options={"title": "Detail"}),
             initial_route="Home",
         )
     )
@@ -175,8 +175,8 @@ def MainTabs():
 def App():
     return pn.NavigationContainer(
         Stack.Navigator(
-            Stack.Screen("Tabs", MainTabs, options={"title": "Home"}),
-            Stack.Screen("Detail", DetailScreen, options={"title": "Detail"}),
+            Stack.Screen("Tabs", component=MainTabs, options={"title": "Home"}),
+            Stack.Screen("Detail", component=DetailScreen, options={"title": "Detail"}),
         )
     )
 ```

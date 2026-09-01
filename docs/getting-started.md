@@ -48,15 +48,15 @@ def HomeScreen():
 @pn.component
 def DetailScreen():
     route = pn.use_route()
-    return pn.Text(f"Count was {route.params.get('count', 0)}", style={"padding": 16})
+    return pn.Text(f"Count was {route.get('count', 0)}", style={"padding": 16})
 
 
 @pn.component
 def App():
     return pn.NavigationContainer(
         Stack.Navigator(
-            Stack.Screen("Home", HomeScreen, options={"title": "Home"}),
-            Stack.Screen("Detail", DetailScreen, options={"title": "Detail"}),
+            Stack.Screen("Home", component=HomeScreen, options={"title": "Home"}),
+            Stack.Screen("Detail", component=DetailScreen, options={"title": "Detail"}),
             initial_route="Home",
         )
     )
