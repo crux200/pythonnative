@@ -104,8 +104,8 @@ Tab = pn.create_tab_navigator()
 def App():
     return pn.NavigationContainer(
         Tab.Navigator(
-            Tab.Screen("Home", HomeScreen, options={"title": "Home"}),
-            Tab.Screen("Settings", SettingsScreen, options={"title": "Settings"}),
+            Tab.Screen("Home", component=HomeScreen, options={"title": "Home"}),
+            Tab.Screen("Settings", component=SettingsScreen, options={"title": "Settings"}),
         )
     )
 ```
@@ -129,8 +129,8 @@ Drawer = pn.create_drawer_navigator()
 def App():
     return pn.NavigationContainer(
         Drawer.Navigator(
-            Drawer.Screen("Home", HomeScreen, options={"title": "Home"}),
-            Drawer.Screen("Profile", ProfileScreen, options={"title": "Profile"}),
+            Drawer.Screen("Home", component=HomeScreen, options={"title": "Home"}),
+            Drawer.Screen("Profile", component=ProfileScreen, options={"title": "Profile"}),
         )
     )
 
@@ -166,8 +166,8 @@ Tab = pn.create_tab_navigator()
 @pn.component
 def MainTabs():
     return Tab.Navigator(
-        Tab.Screen("Home", HomeScreen, options={"title": "Home"}),
-        Tab.Screen("Settings", SettingsScreen, options={"title": "Settings"}),
+        Tab.Screen("Home", component=HomeScreen, options={"title": "Home"}),
+        Tab.Screen("Settings", component=SettingsScreen, options={"title": "Settings"}),
     )
 
 
