@@ -26,7 +26,9 @@ the documented behavior never drifts from the code.
   simulator. Flags: `--device` (target a specific device by identifier
   or name), `--prepare-only`, `--hot-reload`, `--no-logs`.
 - `pn logs android|ios`: stream logs from the running app without
-  rebuilding.
+  rebuilding. Flag: `--device` (target a specific device by identifier
+  or name, same as `pn run`; physical iOS devices aren't supported for
+  log streaming — use Console.app or Xcode > Devices and Simulators).
 - `pn build android|ios`: build distributable artifacts (release by
   default). Flags: `--debug` for the debug variant, `--upload` to send
   an iOS release build to App Store Connect. See

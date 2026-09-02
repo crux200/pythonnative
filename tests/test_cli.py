@@ -620,6 +620,111 @@ def test_devices_json_serializes_awkward_field_values(
     }
 
 
+class _FakeCompletedProc:
+    """Stand-in for subprocess.Popen that returns immediately from wait()."""
+
+    def wait(self) -> int:
+        return 0
+
+
+def test_logs_command_android_sets_android_serial_for_device(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(pn_cli.devices_mod, "list_devices", _fake_list_devices(_FAKE_DEVICES))
+    monkeypatch.delenv("ANDROID_SERIAL", raising=False)
+    monkeypatch.setattr(pn_cli, "_start_android_log_stream", lambda: _FakeCompletedProc())
+
+    pn_cli.logs_command(argparse.Namespace(platform="android", device="Pixel"))
+
+    assert os.environ["ANDROID_SERIAL"] == "R5CT12345XYZ"
+
+
+def test_logs_command_android_no_device_leaves_android_serial_unset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(pn_cli.devices_mod, "list_devices", _fake_list_devices(_FAKE_DEVICES))
+    monkeypatch.delenv("ANDROID_SERIAL", raising=False)
+    monkeypatch.setattr(pn_cli, "_start_android_log_stream", lambda: _FakeCompletedProc())
+
+    pn_cli.logs_command(argparse.Namespace(platform="android", device=None))
+
+    assert "ANDROID_SERIAL" not in os.environ
+
+
+def test_logs_command_ios_passes_resolved_udid(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(pn_cli.devices_mod, "list_devices", _fake_list_devices(_FAKE_DEVICES))
+    monkeypatch.setattr(
+        pn_cli, "_load_config_or_exit", lambda project_dir=None: argparse.Namespace(bundle_id="com.example.app")
+    )
+    captured: Dict[str, Optional[str]] = {}
+
+    def _fake_start_ios_log_stream(bundle_id: str, *, udid: Optional[str] = None) -> _FakeCompletedProc:
+        captured["bundle_id"] = bundle_id
+        captured["udid"] = udid
+        return _FakeCompletedProc()
+
+    monkeypatch.setattr(pn_cli, "_start_ios_log_stream", _fake_start_ios_log_stream)
+
+    pn_cli.logs_command(argparse.Namespace(platform="ios", device="iPhone 17"))
+
+    assert captured == {"bundle_id": "com.example.app", "udid": "ABC-123"}
+
+
+def test_logs_command_ios_no_device_falls_back_to_booted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(pn_cli.devices_mod, "list_devices", _fake_list_devices(_FAKE_DEVICES))
+    monkeypatch.setattr(
+        pn_cli, "_load_config_or_exit", lambda project_dir=None: argparse.Namespace(bundle_id="com.example.app")
+    )
+    captured: Dict[str, Optional[str]] = {}
+
+    def _fake_start_ios_log_stream(bundle_id: str, *, udid: Optional[str] = None) -> _FakeCompletedProc:
+        captured["udid"] = udid
+        return _FakeCompletedProc()
+
+    monkeypatch.setattr(pn_cli, "_start_ios_log_stream", _fake_start_ios_log_stream)
+
+    pn_cli.logs_command(argparse.Namespace(platform="ios", device=None))
+
+    assert captured["udid"] is None
+
+
+def test_logs_command_ios_physical_device_prints_console_hint(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    physical = Device("ios", "device", "PHYS-1", "Owen's iPhone", "iOS 26.4", "connected")
+    monkeypatch.setattr(pn_cli.devices_mod, "list_devices", _fake_list_devices([physical]))
+
+    with pytest.raises(SystemExit) as exc_info:
+        pn_cli.logs_command(argparse.Namespace(platform="ios", device="Owen's iPhone"))
+
+    assert exc_info.value.code == 1
+    assert "Console.app" in capsys.readouterr().out
+
+
+def test_logs_command_bad_device_query_exits_with_hint(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(pn_cli.devices_mod, "list_devices", _fake_list_devices(_FAKE_DEVICES))
+
+    with pytest.raises(SystemExit) as exc_info:
+        pn_cli.logs_command(argparse.Namespace(platform="android", device="nope"))
+
+    assert exc_info.value.code == 1
+    assert "no android device matches 'nope'" in capsys.readouterr().out
+
+
+def test_logs_device_flag_is_wired_through_argparse(tmp_path: Path) -> None:
+    # The tests above call logs_command() directly; this one proves the
+    # subparser actually accepts --device and routes it through.
+    env = {**os.environ, "PATH": str(tmp_path)}
+    result = run_pn(["logs", "android", "--device", "nope"], str(tmp_path), env=env)
+
+    assert result.returncode == 1
+    assert "no android device matches 'nope'" in result.stdout
+
+
 def test_hot_reload_manifest_payload_maps_files_to_modules(tmp_path: Path) -> None:
     app_dir = tmp_path / "app"
     app_dir.mkdir()
