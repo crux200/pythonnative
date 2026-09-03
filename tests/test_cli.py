@@ -636,7 +636,10 @@ def test_logs_command_android_sets_android_serial_for_device(
 
     pn_cli.logs_command(argparse.Namespace(platform="android", device="Pixel"))
 
-    assert os.environ["ANDROID_SERIAL"] == "R5CT12345XYZ"
+    # pop() rather than a plain lookup: monkeypatch.delenv() on a variable that
+    # was never set has nothing to restore, so the value the command exported
+    # would otherwise leak into the rest of the session.
+    assert os.environ.pop("ANDROID_SERIAL") == "R5CT12345XYZ"
 
 
 def test_logs_command_android_no_device_leaves_android_serial_unset(
@@ -651,7 +654,7 @@ def test_logs_command_android_no_device_leaves_android_serial_unset(
     assert "ANDROID_SERIAL" not in os.environ
 
 
-def test_logs_command_ios_passes_resolved_udid(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_logs_command_ios_passes_resolved_udid(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(pn_cli.devices_mod, "list_devices", _fake_list_devices(_FAKE_DEVICES))
     monkeypatch.setattr(
         pn_cli, "_load_config_or_exit", lambda project_dir=None: argparse.Namespace(bundle_id="com.example.app")
@@ -698,6 +701,24 @@ def test_logs_command_ios_physical_device_prints_console_hint(
 
     with pytest.raises(SystemExit) as exc_info:
         pn_cli.logs_command(argparse.Namespace(platform="ios", device="Owen's iPhone"))
+
+    assert exc_info.value.code == 1
+    assert "Console.app" in capsys.readouterr().out
+
+
+def test_logs_command_ios_no_simulator_prints_console_hint(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Without --device and with no booted simulator, the user may well be
+    # holding a physical device, so the Console.app pointer must still print.
+    monkeypatch.setattr(pn_cli.devices_mod, "list_devices", _fake_list_devices(_FAKE_DEVICES))
+    monkeypatch.setattr(
+        pn_cli, "_load_config_or_exit", lambda project_dir=None: argparse.Namespace(bundle_id="com.example.app")
+    )
+    monkeypatch.setattr(pn_cli, "_start_ios_log_stream", lambda bundle_id, *, udid=None: None)
+
+    with pytest.raises(SystemExit) as exc_info:
+        pn_cli.logs_command(argparse.Namespace(platform="ios", device=None))
 
     assert exc_info.value.code == 1
     assert "Console.app" in capsys.readouterr().out

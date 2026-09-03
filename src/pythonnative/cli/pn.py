@@ -12,8 +12,8 @@ The console script `pn` (declared in `pyproject.toml`) dispatches to:
   simulators, as a table or as JSON with `--json`.
 - `pn run android|ios [--device D]`: stage + build + install + launch on
   a device, emulator, or simulator, with optional on-device hot reload.
-- `pn logs android|ios`: stream logs from the running app without
-  rebuilding.
+- `pn logs android|ios [--device D]`: stream logs from the running app
+  without rebuilding.
 - `pn build android|ios`: produce standalone artifacts (signed APK/AAB,
   or an iOS archive/IPA, optionally uploaded to App Store Connect).
 - `pn app-id android|ios`: print the resolved application/bundle id
@@ -656,6 +656,7 @@ def logs_command(args: argparse.Namespace) -> None:
     udid = device.identifier if device is not None else None
     proc = _start_ios_log_stream(config.bundle_id, udid=udid)
     if proc is None:
+        print("For a physical device, use Console.app or Xcode > Devices and Simulators.")
         sys.exit(1)
     try:
         proc.wait()
